@@ -1,0 +1,4 @@
+.build/
+.swiftpm/
+MusicRPC.app/
+.DS_Store
