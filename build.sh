@@ -2,14 +2,14 @@
 set -eu
 cd "$(dirname "$0")"
 
-swift build -c release
+for arch in arm64 x86_64; do swift build -c release --triple $arch-apple-macosx26.0; done
 APP=MusicRPC.app
 RES=$APP/Contents/Resources
 V=Vendor/mediaremote-adapter
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$RES/MediaRemoteAdapter.framework"
-cp "$(swift build -c release --show-bin-path)/MusicRPC" "$APP/Contents/MacOS/"
+lipo -create .build/arm64-apple-macosx/release/MusicRPC .build/x86_64-apple-macosx/release/MusicRPC -output "$APP/Contents/MacOS/MusicRPC"
 cp Info.plist "$APP/Contents/"
 cp "$V/bin/mediaremote-adapter.pl" "$RES/"
 

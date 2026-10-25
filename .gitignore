@@ -2,3 +2,4 @@
 .swiftpm/
 MusicRPC.app/
 .DS_Store
+*.zip
