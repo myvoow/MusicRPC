@@ -108,10 +108,53 @@ struct PanelView: View {
         }
         .padding()
         .frame(width: 280)
+        .background(WindowAnimator())
     }
 
     private var status: String {
         if !DiscordIPC.isValid(clientID: presence.clientID) { return "Application ID manquant ou invalide" }
         return presence.discordConnected ? "Connecté à Discord" : "Discord introuvable"
+    }
+}
+
+struct WindowAnimator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { Hook() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    final class Hook: NSView {
+        private var observed: NSWindow?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window, window !== observed else { return }
+            observed = window
+            let center = NotificationCenter.default
+            center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { _ in Self.animateIn(window) }
+            center.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { _ in window.alphaValue = 0 }
+            Self.animateIn(window)
+        }
+
+        static func animateIn(_ window: NSWindow) {
+            guard let view = window.contentView?.superview ?? window.contentView else { return }
+            view.wantsLayer = true
+            guard let layer = view.layer else { return }
+            let size = view.bounds.size, scale = 0.82
+
+            let spring = CASpringAnimation(keyPath: "transform")
+            spring.fromValue = CATransform3DScale(
+                CATransform3DMakeTranslation(size.width * (1 - scale) / 2, size.height * (1 - scale), 0), scale, scale, 1)
+            spring.toValue = CATransform3DIdentity
+            spring.mass = 1
+            spring.stiffness = 320
+            spring.damping = 26
+            spring.duration = spring.settlingDuration
+            layer.add(spring, forKey: "open")
+
+            window.alphaValue = 0
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.16
+                window.animator().alphaValue = 1
+            }
+        }
     }
 }
